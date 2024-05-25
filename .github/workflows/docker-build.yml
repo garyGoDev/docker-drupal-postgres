@@ -11,6 +11,10 @@ on:
   push:
     branches:
       - 'main'
+    paths-ignore:
+      - 'example/**'
+      - 'README.md'
+      - 'docs/**'
 
 jobs:
   docker-build:

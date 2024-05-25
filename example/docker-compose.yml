@@ -1,0 +1,26 @@
+# Drupal with PostgreSQL
+version: '3.1'
+
+services:
+
+  drupal:
+    image: your-custom-image:1.0
+    ports:
+      - 8080:80
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: postgres
+      DRUPAL_HASH_SALT: ${HASH_SALT}
+      DRUPAL_SITE_NAME: example
+      DRUPAL_ADMIN_USER: admin
+      DRUPAL_ADMIN_PASS: ${DRUPAL_ADMIN_PASS}
+      DRUPAL_ADMIN_EMAIL: admin@example.com
+    restart: always
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    restart: always

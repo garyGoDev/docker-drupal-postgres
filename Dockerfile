@@ -1,5 +1,8 @@
 # Start from the original Drupal image
 FROM drupal:10.2.6-php8.2-apache-bookworm
+# Set default environment variables
+# Set default config sync directory
+ENV DRUPAL_CONFIG_SYNC_DIRECTORY /var/configsync
 # Set working directory to root of drupal project set in base image
 WORKDIR /opt/drupal
 # Install drush and any additional Drupal extensions using Composer
@@ -14,12 +17,16 @@ RUN cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini \
 RUN pecl install apcu \
     && docker-php-ext-enable apcu
 # Configure APCu
-RUN echo "apc.enabled=1" >> /usr/local/etc/php/php.ini \
-    && echo "apc.shm_size=256M" >> /usr/local/etc/php/php.ini \
-    && echo "apc.ttl=7200" >> /usr/local/etc/php/php.ini \
-    && echo "apc.enable_cli=0" >> /usr/local/etc/php/php.ini
+RUN { \
+        echo "apc.enabled=1"; \
+        echo "apc.shm_size=256M"; \
+        echo "apc.ttl=7200"; \
+        echo "apc.enable_cli=0"; \
+    } > /usr/local/etc/php/conf.d/apcu.ini
 # Copy default.settings.php to settings.php
 RUN cp /var/www/html/sites/default/default.settings.php /var/www/html/sites/default/settings.php
+# Create the DRUPAL_CONFIG_SYNC_DIRECTORY if it does not exist
+RUN mkdir -p $DRUPAL_CONFIG_SYNC_DIRECTORY && chown -R www-data:www-data $DRUPAL_CONFIG_SYNC_DIRECTORY
 # Append database configuration to settings.php
 # Append hash salt to settings.php
 # Append configuration sync directory to settings.php
@@ -39,6 +46,12 @@ RUN echo "\$databases['default']['default'] = array (" >> /var/www/html/sites/de
 # Set file permissions
 RUN chown -R www-data:www-data /var/www/html/sites/default/settings.php && \
     chmod 644 /var/www/html/sites/default/settings.php
+# Entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+# Run Apache in the foreground
+CMD ["apache2-foreground"]
 # Docs
-LABEL description="Single Dockerfile build of Drupal with drush and defaulted settings including Postgres"
-LABEL version="1.0"
+LABEL description="Dockerfile build of Drupal with drush and defaulted settings including Postgres"
+LABEL version="1.1"
